@@ -1,5 +1,6 @@
 // server.js
 const http = require('http');
+const fs = require('fs');
 
 const server = http.createServer((req, res) => {
     const url = req.url;
@@ -25,6 +26,31 @@ const server = http.createServer((req, res) => {
 
     if (url === '/contact' && method === 'POST') {
         // Implement form submission handling
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        req.on('end', () => {
+            const name = body.split('=')[1];
+            const decodedName = decodeURIComponent(
+              name.replace(/\+/g, " "),
+            );
+            fs.appendFile("submissions.txt", decodedName + "\n", (err) => {
+              if (err) {
+                console.error(err);
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                return res.end("Server Error");
+              }
+
+              // Send a simple plain text success response
+              res.writeHead(200, { "Content-Type": "text/plain" });
+              res.end("Submission saved successfully!");
+              // You can redirect to contact page after submission if needed
+            //   res.writeHead(302, { Location: "/contact" });
+            //   return res.end();
+            });
+        });
     }
 
     else {
